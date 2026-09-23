@@ -1,0 +1,9 @@
+node_modules/
+*.tgz
+.DS_Store
+.tmp-*/
+test/fixtures/astro/.astro/
+test/fixtures/astro/dist/
+test/fixtures/astro/.npm-cache/
+test/fixtures/astro/package-lock.json
+test/fixtures/astro/widget-*.png

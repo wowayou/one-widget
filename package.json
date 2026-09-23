@@ -1,0 +1,52 @@
+{
+  "name": "@eigentime/one-widget",
+  "version": "0.1.0",
+  "description": "Static-first, accessible promotion and sponsorship links for Eigentime and other sites.",
+  "type": "module",
+  "sideEffects": [
+    "./src/styles.css"
+  ],
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "import": "./src/index.js"
+    },
+    "./astro": "./src/astro/PromotionLinks.astro",
+    "./styles.css": "./src/styles.css",
+    "./tracking": {
+      "types": "./src/tracking.d.ts",
+      "import": "./src/tracking.js"
+    }
+  },
+  "files": [
+    "src",
+    "docs",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "check": "node scripts/check.mjs",
+    "test": "node --test test/model.test.js test/render.test.js",
+    "pack:check": "npm pack --dry-run"
+  },
+  "keywords": [
+    "astro",
+    "sponsorship",
+    "promotion",
+    "support",
+    "social-links",
+    "static-site"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
+  "peerDependencies": {
+    "astro": ">=5"
+  },
+  "peerDependenciesMeta": {
+    "astro": {
+      "optional": true
+    }
+  }
+}

@@ -1,0 +1,54 @@
+---
+import "../styles.css";
+import { renderPromotionLinks } from "../render.js";
+
+export interface Props {
+  items: Array<Record<string, unknown>>;
+  ariaLabel?: string;
+  class?: string;
+  layout?: "wrap" | "stack" | "inline";
+  theme?: "inherit" | "light" | "dark";
+  openInNewTab?: boolean;
+  tracking?: {
+    sourceParam?: string;
+    allowedSources?: string[];
+    defaultSource?: string;
+    unknownSource?: string;
+    eventName?: string;
+  };
+  platforms?: Record<string, Record<string, unknown>>;
+  icons?: Record<string, Record<string, unknown>>;
+}
+
+const {
+  items,
+  ariaLabel,
+  class: className,
+  layout,
+  theme,
+  openInNewTab,
+  tracking,
+  platforms,
+  icons
+} = Astro.props;
+
+const markup = renderPromotionLinks(items, {
+  ariaLabel,
+  className,
+  layout,
+  theme,
+  openInNewTab,
+  tracking,
+  platforms,
+  icons
+});
+---
+
+<Fragment set:html={markup} />
+
+<script>
+  import { enhancePromotionWidgets } from "../tracking.js";
+
+  enhancePromotionWidgets();
+  document.addEventListener("astro:page-load", () => enhancePromotionWidgets());
+</script>

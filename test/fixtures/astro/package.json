@@ -1,0 +1,12 @@
+{
+  "name": "one-widget-astro-fixture",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "astro build"
+  },
+  "dependencies": {
+    "@eigentime/one-widget": "file:../../..",
+    "astro": "7.2.2"
+  }
+}

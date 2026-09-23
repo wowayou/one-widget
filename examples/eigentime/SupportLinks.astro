@@ -1,0 +1,37 @@
+---
+// Drop-in fragment for personal-blog/src/pages/[lang]/support.astro.
+// The surrounding page remains responsible for copy, disclosure, and identity.
+import PromotionLinks from "@eigentime/one-widget/astro";
+import supportConfig from "../../../support.config.json";
+
+interface Props {
+  lang: "zh" | "en";
+  ctaLabel: string;
+}
+
+const { lang, ctaLabel } = Astro.props;
+const items = [
+  {
+    id: supportConfig.platform,
+    kind: "support",
+    platform: supportConfig.platform,
+    url: supportConfig.url,
+    label: ctaLabel,
+    appearance: "button",
+    emphasis: "primary",
+    order: 10
+  }
+];
+---
+
+<PromotionLinks
+  items={items}
+  ariaLabel={lang === "zh" ? "支持 Eigentime" : "Support Eigentime"}
+  tracking={{
+    sourceParam: "from",
+    allowedSources: supportConfig.sources,
+    defaultSource: "direct",
+    unknownSource: "other",
+    eventName: "support_click"
+  }}
+/>

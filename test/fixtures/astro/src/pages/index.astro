@@ -1,0 +1,40 @@
+---
+import PromotionLinks from "@eigentime/one-widget/astro";
+
+const items = [
+  {
+    id: "afdian",
+    kind: "support",
+    platform: "afdian",
+    url: "https://afdian.com/a/eigentime",
+    label: "Support Eigentime",
+    order: 10
+  },
+  {
+    id: "source",
+    kind: "repository",
+    url: "https://github.com/wowayou/personal-blog",
+    label: "View source",
+    order: 20
+  }
+];
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>one-widget Astro fixture</title>
+  </head>
+  <body>
+    <PromotionLinks
+      items={items}
+      ariaLabel="Support and project links"
+      tracking={{
+        allowedSources: ["blog", "github"],
+        eventName: "support_click"
+      }}
+    />
+  </body>
+</html>
