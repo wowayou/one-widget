@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   createPlatformRegistry,
+  createIconRegistry,
   inferPlatform,
   normalizePromotionItems,
   normalizeUrl,
@@ -49,6 +50,20 @@ test("supports local custom platform registries", () => {
   assert.equal(inferPlatform("https://code.example.org/team/repo", base), undefined);
 });
 
+test("prefers the most specific host over a broader built-in match", () => {
+  const registry = registerPlatform(createPlatformRegistry(), "gist", {
+    defaultKind: "repository",
+    defaultLabel: "GitHub Gist",
+    icon: "code",
+    hosts: ["gist.github.com"]
+  });
+
+  // gist.github.com is a subdomain suffix-match for the built-in github.com,
+  // but the exact custom host must win.
+  assert.equal(inferPlatform("https://gist.github.com/user/abc123", registry), "gist");
+  assert.equal(inferPlatform("https://github.com/user/repo", registry), "github");
+});
+
 test("rejects unsafe or ambiguous configuration", () => {
   assert.throws(() => normalizeUrl("javascript:alert(1)"), /unsupported protocol/);
   assert.throws(() => normalizeUrl("/relative"), /absolute URL/);
@@ -60,4 +75,22 @@ test("rejects unsafe or ambiguous configuration", () => {
   assert.throws(() => normalizePromotionItems([
     { id: "bad", url: "https://example.com", label: "Bad", enabled: "yes" }
   ]), /enabled must be a boolean/);
+});
+
+test("rejects a non-boolean default openInNewTab option", () => {
+  assert.throws(() => normalizePromotionItems([
+    { id: "ok", url: "https://example.com", label: "OK" }
+  ], { openInNewTab: "no" }), /openInNewTab must be a boolean/);
+});
+
+test("matches custom icon keys regardless of case", () => {
+  const registry = createIconRegistry({
+    Forge: { viewBox: "0 0 24 24", paths: [{ d: "M4 4h16v16H4z" }] }
+  });
+  assert.ok(registry.has("forge"), "custom icon key should be lowercased");
+
+  const [item] = normalizePromotionItems([
+    { id: "forge", url: "https://example.com", label: "Forge", icon: "Forge" }
+  ]);
+  assert.equal(item.icon, "forge", "item.icon should resolve to the lowercased key");
 });

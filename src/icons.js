@@ -70,8 +70,16 @@ function normalizeIconDefinition(key, definition) {
 
 export function createIconRegistry(customIcons = {}) {
   const registry = new Map();
-  for (const [key, definition] of Object.entries({ ...ICONS, ...customIcons })) {
+  for (const [key, definition] of Object.entries(ICONS)) {
     registry.set(key, normalizeIconDefinition(key, definition));
+  }
+  // Custom keys are lowercased to stay consistent with registerIcon() and the
+  // lowercased item.icon lookup in model.js; otherwise a key like "Forge"
+  // would never match and silently fall back to the default link icon.
+  for (const [key, definition] of Object.entries(customIcons)) {
+    const normalizedKey = String(key).trim().toLowerCase();
+    if (!normalizedKey) throw new TypeError("Icon key cannot be empty.");
+    registry.set(normalizedKey, normalizeIconDefinition(normalizedKey, definition));
   }
   return registry;
 }

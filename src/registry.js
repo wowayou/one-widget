@@ -110,10 +110,6 @@ export function registerPlatform(registry, key, definition) {
   return next;
 }
 
-function hostMatches(hostname, candidate) {
-  return hostname === candidate || hostname.endsWith(`.${candidate}`);
-}
-
 export function inferPlatform(url, registry = createPlatformRegistry()) {
   let parsed;
   try {
@@ -122,11 +118,26 @@ export function inferPlatform(url, registry = createPlatformRegistry()) {
     return undefined;
   }
 
+  const protocol = parsed.protocol.toLowerCase();
+  const hostname = parsed.hostname.toLowerCase();
+
+  // Pick the most specific match rather than the first one in iteration order.
+  // An exact host beats a suffix match, and a longer host beats a shorter one,
+  // so a custom "gist.github.com" platform wins over the built-in "github.com".
+  let best;
+  const consider = (key, score) => {
+    if (!best || score > best.score) best = { key, score };
+  };
+
   for (const [key, definition] of registry) {
-    if (definition.protocols.includes(parsed.protocol.toLowerCase())) return key;
-    if (definition.hosts.some((host) => hostMatches(parsed.hostname.toLowerCase(), host))) return key;
+    if (definition.protocols.includes(protocol)) consider(key, 1);
+    for (const host of definition.hosts) {
+      if (hostname === host) consider(key, host.length + 1000);
+      else if (hostname.endsWith(`.${host}`)) consider(key, host.length);
+    }
   }
-  return undefined;
+
+  return best?.key;
 }
 
 export const BUILTIN_PLATFORMS = Object.freeze(Object.keys(PLATFORM_DEFINITIONS));

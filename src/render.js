@@ -28,9 +28,33 @@ function renderIcon(key, registry) {
 
 function normalizeTracking(tracking) {
   if (!tracking) return undefined;
+  if (typeof tracking !== "object" || Array.isArray(tracking)) {
+    throw new TypeError("tracking must be an object.");
+  }
+
+  for (const field of ["sourceParam", "defaultSource", "unknownSource", "eventName"]) {
+    const value = tracking[field];
+    if (value !== undefined && (typeof value !== "string" || !value.trim())) {
+      throw new TypeError(`tracking.${field} must be a non-empty string.`);
+    }
+  }
+
+  let allowedSources = [];
+  if (tracking.allowedSources !== undefined) {
+    if (!Array.isArray(tracking.allowedSources)) {
+      throw new TypeError("tracking.allowedSources must be an array of strings.");
+    }
+    allowedSources = tracking.allowedSources.map((source, index) => {
+      if (typeof source !== "string" || !source.trim()) {
+        throw new TypeError(`tracking.allowedSources[${index}] must be a non-empty string.`);
+      }
+      return source;
+    });
+  }
+
   return {
     sourceParam: tracking.sourceParam ?? "from",
-    allowedSources: Array.isArray(tracking.allowedSources) ? tracking.allowedSources.map(String) : [],
+    allowedSources,
     defaultSource: tracking.defaultSource ?? "direct",
     unknownSource: tracking.unknownSource ?? "other",
     eventName: tracking.eventName ?? "promotion_click"
@@ -81,7 +105,7 @@ export function renderPromotionLinks(items, options = {}) {
       `one-widget__link--${item.emphasis}`
     ].join(" ");
 
-    return `<li class="one-widget__item"><a${attribute("class", linkClass)}${attribute("href", item.url)}${attribute("target", target)}${attribute("rel", rel)}${attribute("aria-label", item.label)}${attribute("title", item.appearance === "icon" ? item.label : undefined)}${attribute("data-one-item", item.id)}${attribute("data-kind", item.kind)}${attribute("data-platform", item.platform)}${attribute("data-source-project", tracking?.defaultSource)}>${item.icon === false ? "" : renderIcon(item.icon, iconRegistry)}<span class="${labelClass}">${escapeHtml(label)}</span></a></li>`;
+    return `<li class="one-widget__item"><a${attribute("class", linkClass)}${attribute("href", item.url)}${attribute("target", target)}${attribute("rel", rel)}${attribute("aria-label", item.appearance === "icon" ? item.label : undefined)}${attribute("title", item.appearance === "icon" ? item.label : undefined)}${attribute("data-one-item", item.id)}${attribute("data-kind", item.kind)}${attribute("data-platform", item.platform)}${attribute("data-source-project", tracking?.defaultSource)}>${item.icon === false ? "" : renderIcon(item.icon, iconRegistry)}<span class="${labelClass}">${escapeHtml(label)}</span></a></li>`;
   }).join("");
 
   return `<nav${rootAttributes}><ul class="one-widget__list">${links}</ul></nav>`;

@@ -31,7 +31,7 @@ for (const target of Object.values(packageJson.exports)) {
   }
 }
 
-const tests = spawnSync(process.execPath, ["--test", "test/model.test.js", "test/render.test.js"], {
+const tests = spawnSync(process.execPath, ["--test", "test/model.test.js", "test/render.test.js", "test/tracking.test.js"], {
   cwd: rootPath,
   encoding: "utf8",
   stdio: "inherit"

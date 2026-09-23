@@ -15,7 +15,8 @@ test("renders semantic, accessible links with safe new-tab attributes", () => {
 
   assert.match(html, /^<nav/);
   assert.match(html, /<ul class="one-widget__list">/);
-  assert.match(html, /aria-label="Support Eigentime"/);
+  assert.match(html, /<span class="one-widget__label">Support Eigentime<\/span>/);
+  assert.doesNotMatch(html, /<a[^>]*aria-label=/, "non-icon links get their name from visible text");
   assert.match(html, /target="_blank"/);
   assert.match(html, /rel="noopener noreferrer"/);
   assert.match(html, /one-widget__link--primary/);
@@ -62,6 +63,24 @@ test("renders icon-only items with an accessible name", () => {
   assert.match(html, /title="View source on GitHub"/);
 });
 
+test("uses the visible shortLabel as the accessible name in non-icon mode", () => {
+  const html = renderPromotionLinks([
+    {
+      id: "support",
+      kind: "support",
+      platform: "afdian",
+      url: "https://afdian.com/a/eigentime",
+      label: "Support Eigentime on Afdian",
+      shortLabel: "Sponsor"
+    }
+  ]);
+
+  // The visible text must carry the accessible name (WCAG 2.5.3), so no
+  // aria-label may override "Sponsor" with the longer label.
+  assert.match(html, /<span class="one-widget__label">Sponsor<\/span>/);
+  assert.doesNotMatch(html, /<a[^>]*aria-label=/);
+});
+
 test("resolves allowlisted source attribution", () => {
   const config = {
     allowedSources: ["blog", "one-stop-job"],
@@ -72,4 +91,21 @@ test("resolves allowlisted source attribution", () => {
   assert.equal(resolveTrackingSource("", config), "direct");
   assert.equal(resolveTrackingSource("?from=one-stop-job", config), "one-stop-job");
   assert.equal(resolveTrackingSource("?from=not-allowed", config), "other");
+});
+
+test("rejects malformed tracking configuration instead of silently degrading", () => {
+  const items = [{ id: "a", url: "https://afdian.com/a/x", label: "Support" }];
+
+  assert.throws(
+    () => renderPromotionLinks(items, { tracking: { allowedSources: "blog" } }),
+    /allowedSources must be an array/
+  );
+  assert.throws(
+    () => renderPromotionLinks(items, { tracking: { allowedSources: ["blog", 42] } }),
+    /allowedSources\[1\] must be a non-empty string/
+  );
+  assert.throws(
+    () => renderPromotionLinks(items, { tracking: { eventName: "" } }),
+    /eventName must be a non-empty string/
+  );
 });

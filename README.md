@@ -111,7 +111,8 @@ interface PromotionItem {
 }
 ```
 
-- 数组顺序是相同 `order` 时的稳定后备顺序。
+- 未显式设置 `order` 的条目会以它在数组中的下标作为 `order`,再与其它条目一起排序。因此只给部分条目写 `order` 时,未写的那条可能穿插到中间(例如 `order: 1`、下标 2、`order: 5` 会排成 `1, 2, 5`)。要精确控制顺序,建议要么全写、要么全不写。
+- 相同 `order` 时,数组顺序作为稳定后备顺序。
 - `enabled: false` 会保留配置但不渲染，适合临时下线某个平台。
 - 未填 `platform` 时会根据 URL 推断；显式值始终优先。
 - 未填 `kind`、`icon`、`appearance`、`emphasis` 时，才从平台注册与业务语义推导默认值。
@@ -172,7 +173,9 @@ Astro 适配器的真实构建 fixture 需要单独安装其测试依赖：
 ```bash
 cd test/fixtures/astro
 npm install
-npm run build
+npm run verify
 ```
+
+已在 Astro 5.18.2、6.4.8、7.3.4（即 `peerDependencies` 声明的 5 / 6 / 7 三个大版本的最新补丁）上实际构建并断言通过。
 
 架构与稳定 API 边界见 [docs/architecture.md](docs/architecture.md)。

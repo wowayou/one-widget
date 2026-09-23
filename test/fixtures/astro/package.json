@@ -3,7 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "astro build"
+    "build": "astro build",
+    "verify": "astro build && node verify.mjs"
   },
   "dependencies": {
     "@eigentime/one-widget": "file:../../..",

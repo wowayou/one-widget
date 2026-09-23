@@ -66,6 +66,9 @@ export function normalizePromotionItems(items, options = {}) {
   if (!Array.isArray(items)) throw new TypeError("items must be an array.");
 
   const registry = options.registry ?? createPlatformRegistry(options.platforms);
+  if (options.openInNewTab !== undefined && typeof options.openInNewTab !== "boolean") {
+    throw new TypeError("options.openInNewTab must be a boolean.");
+  }
   const defaultOpenInNewTab = options.openInNewTab ?? true;
   const ids = new Set();
 
