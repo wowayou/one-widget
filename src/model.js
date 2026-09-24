@@ -115,6 +115,9 @@ export function normalizePromotionItems(items, options = {}) {
     if (item.icon !== undefined && item.icon !== false && (typeof item.icon !== "string" || !item.icon.trim())) {
       throw new TypeError(`${path}.icon must be a non-empty string or false.`);
     }
+    if (item.eventName !== undefined && (typeof item.eventName !== "string" || !item.eventName.trim())) {
+      throw new TypeError(`${path}.eventName must be a non-empty string.`);
+    }
 
     const icon = item.icon === false
       ? false
@@ -133,6 +136,10 @@ export function normalizePromotionItems(items, options = {}) {
       openInNewTab: item.openInNewTab ?? (url.startsWith("mailto:") ? false : defaultOpenInNewTab),
       appearance,
       emphasis,
+      // Per-item override for the group-level tracking.eventName, so mixing a
+      // support CTA with a "view source" link does not report both as the same
+      // conversion event.
+      eventName: item.eventName ? item.eventName.trim() : undefined,
       _index: index
     });
   });

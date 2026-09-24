@@ -23,8 +23,14 @@ npm install ../one-widget
 发布仓库并打 tag 后，博客可以固定到明确版本，而不是跟随主分支：
 
 ```bash
+# 完全锁定：只有手动改这行才会变
 npm install github:wowayou/one-widget#v0.1.0
+
+# 跟随补丁与向后兼容改动：npm update 即可，无需改配置
+npm install "github:wowayou/one-widget#semver:^0.1.0"
 ```
+
+两种方式的差别只在“何时取到新版本”，不在“要不要重新配置”，后者由下面的升级策略保证。
 
 ```astro
 ---
@@ -108,6 +114,7 @@ interface PromotionItem {
   openInNewTab?: boolean;
   appearance?: "icon" | "chip" | "button";
   emphasis?: "primary" | "secondary" | "quiet";
+  eventName?: string;
 }
 ```
 
@@ -117,6 +124,17 @@ interface PromotionItem {
 - 未填 `platform` 时会根据 URL 推断；显式值始终优先。
 - 未填 `kind`、`icon`、`appearance`、`emphasis` 时，才从平台注册与业务语义推导默认值。
 - `appearance: "icon"` 仍保留 `aria-label` 和屏幕阅读器文本，可点击区域固定不小于 44×44px。
+- `label` / `shortLabel` 自带 emoji（例如 `❤️ 在爱发电支持`）时应设 `icon: false`，否则会和组件默认图标重复出现两个心形。
+- `eventName` 只覆盖该条目的点击事件名，未填时用 `tracking.eventName`。同一组里混放“支持”和“查看源码”时必须给后者单独的事件名，否则源码点击会被统计成支持转化；`kind`、`platform`、`item_id` 仍会作为事件参数一起上报。
+
+## 升级与版本策略
+
+目标是“升级不需要重新配置”，因此把兼容性写成可执行的约束而不是口头承诺：
+
+- 公开契约由 `npm run check` 里的契约测试锁定：静态 HTML 结构、`one-widget__*` class、归因 `data-*` 属性、`one-widget:click` 与 `dataLayer` 的字段名、`--one-*` token 名。破坏其中任何一项都会让上游测试直接失败，而不是等博客构建时才发现。
+- 新增能力一律是可选字段并保留原有默认值（`eventName` 就是这样加入的）：不填等于升级前的行为。
+- 0.x 阶段用 minor 表达破坏性变更。`#semver:^0.1.0` 会取到 `0.1.x` 的最新 tag，不会自动跨到 `0.2.0`，所以需要改配置的变更永远不会自动到达博客。
+- 每次发布在 [CHANGELOG.md](CHANGELOG.md) 写明“是否需要改调用方配置”，升级时只读这一行即可，不必读 diff。
 
 ## 扩展平台与图标
 
@@ -173,9 +191,12 @@ Astro 适配器的真实构建 fixture 需要单独安装其测试依赖：
 ```bash
 cd test/fixtures/astro
 npm install
-npm run verify
+npm run verify            # 默认 astro ^7
+npm run verify:astro5     # 换装 astro ^5 后重跑
+npm run verify:astro6
+npm run verify:astro7
 ```
 
-已在 Astro 5.18.2、6.4.8、7.3.4（即 `peerDependencies` 声明的 5 / 6 / 7 三个大版本的最新补丁）上实际构建并断言通过。
+最近一次多版本验证：Astro 5.18.2、6.4.8、7.3.4，三个大版本均构建并断言通过。
 
 架构与稳定 API 边界见 [docs/architecture.md](docs/architecture.md)。

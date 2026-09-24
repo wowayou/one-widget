@@ -1,6 +1,6 @@
 {
   "name": "@eigentime/one-widget",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Static-first, accessible promotion and sponsorship links for Eigentime and other sites.",
   "type": "module",
   "sideEffects": [
@@ -16,17 +16,19 @@
     "./tracking": {
       "types": "./src/tracking.d.ts",
       "import": "./src/tracking.js"
-    }
+    },
+    "./package.json": "./package.json"
   },
   "files": [
     "src",
     "docs",
     "README.md",
+    "CHANGELOG.md",
     "LICENSE"
   ],
   "scripts": {
     "check": "node scripts/check.mjs",
-    "test": "node --test test/model.test.js test/render.test.js test/tracking.test.js",
+    "test": "node --test test/model.test.js test/render.test.js test/tracking.test.js test/contract.test.js",
     "pack:check": "npm pack --dry-run"
   },
   "keywords": [

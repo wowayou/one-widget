@@ -39,6 +39,8 @@ tracking.js：可选的来源归因与事件增强
 - `one-widget:click` 事件及其 `item_id`、`kind`、`platform`、`source_project` 字段；
 - `--one-*` CSS token。
 
+这些契约由 `test/contract.test.js` 断言锁定，不依赖人工记得；消费方不应该为了升级而重写配置，因此新能力只能以可选字段 + 保留旧默认值的形式加入。
+
 短期不承诺稳定的部分：
 
 - 内建平台清单；
@@ -55,6 +57,7 @@ tracking.js：可选的来源归因与事件增强
 - URL 不是绝对地址、协议不安全或含内嵌凭据；
 - `kind`、`appearance`、`emphasis`、layout、theme 不属于支持值；
 - 布尔字段或数值字段类型错误；
+- `eventName` 为空串或纯空白；
 - 自定义图标缺少 `viewBox` 或 path。
 
 只有两类情况使用可预期的 fallback：未知平台使用 `custom` 语义；找不到图标 key 时使用中性的 link 图标。前者保证新平台无需升级包，后者保证图标配置错误不会让链接本身消失。

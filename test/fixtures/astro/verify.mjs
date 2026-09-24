@@ -25,6 +25,11 @@ const indexHtml = readFileSync(indexPath, "utf8");
 // 1. Static markup with attribution data-* attributes is present without JS.
 assert.match(indexHtml, /data-one-widget/, "root widget marker missing from static HTML");
 assert.match(indexHtml, /data-event-name="support_click"/, "tracking event name not emitted");
+assert.match(
+  indexHtml,
+  /data-one-item="source"[^>]*data-event-name="source_click"/,
+  "per-item event name override not emitted"
+);
 assert.match(indexHtml, /data-one-item="afdian"/, "per-item attribution id missing");
 assert.match(indexHtml, /data-platform="github"/, "inferred platform attribution missing");
 

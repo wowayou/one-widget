@@ -64,6 +64,17 @@ test("prefers the most specific host over a broader built-in match", () => {
   assert.equal(inferPlatform("https://github.com/user/repo", registry), "github");
 });
 
+test("lets a custom platform claim a host a built-in already covers", () => {
+  const registry = createPlatformRegistry({
+    myhub: { defaultKind: "repository", defaultLabel: "MyHub", hosts: ["github.com"] }
+  });
+
+  // Equal specificity: the explicitly registered platform is the more recent
+  // intent, so it must win over the built-in of the same host.
+  assert.equal(inferPlatform("https://github.com/user/repo", registry), "myhub");
+  assert.equal(inferPlatform("https://gitlab.com/user/repo", registry), "gitlab");
+});
+
 test("rejects unsafe or ambiguous configuration", () => {
   assert.throws(() => normalizeUrl("javascript:alert(1)"), /unsupported protocol/);
   assert.throws(() => normalizeUrl("/relative"), /absolute URL/);
@@ -75,6 +86,9 @@ test("rejects unsafe or ambiguous configuration", () => {
   assert.throws(() => normalizePromotionItems([
     { id: "bad", url: "https://example.com", label: "Bad", enabled: "yes" }
   ]), /enabled must be a boolean/);
+  assert.throws(() => normalizePromotionItems([
+    { id: "bad", url: "https://example.com", label: "Bad", eventName: "  " }
+  ]), /eventName must be a non-empty string/);
 });
 
 test("rejects a non-boolean default openInNewTab option", () => {

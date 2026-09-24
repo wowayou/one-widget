@@ -93,6 +93,32 @@ test("resolves allowlisted source attribution", () => {
   assert.equal(resolveTrackingSource("?from=not-allowed", config), "other");
 });
 
+test("emits a per-item event name only when tracking is enabled", () => {
+  const items = [
+    {
+      id: "support",
+      kind: "support",
+      url: "https://afdian.com/a/eigentime",
+      label: "Support Eigentime"
+    },
+    {
+      id: "repo",
+      kind: "repository",
+      url: "https://github.com/wowayou/one-widget",
+      label: "View source",
+      eventName: "source_click"
+    }
+  ];
+
+  const tracked = renderPromotionLinks(items, { tracking: { eventName: "support_click" } });
+  assert.match(tracked, /data-one-item="repo"[^>]*data-event-name="source_click"/);
+  assert.doesNotMatch(tracked, /data-one-item="support"[^>]*data-event-name=/);
+
+  // Without a tracking option nothing is instrumented, so a stray event name
+  // must not leak into the markup.
+  assert.doesNotMatch(renderPromotionLinks(items), /data-event-name=/);
+});
+
 test("rejects malformed tracking configuration instead of silently degrading", () => {
   const items = [{ id: "a", url: "https://afdian.com/a/x", label: "Support" }];
 

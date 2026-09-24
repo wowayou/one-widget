@@ -17,6 +17,8 @@ export interface PromotionItem {
   openInNewTab?: boolean;
   appearance?: PromotionAppearance;
   emphasis?: PromotionEmphasis;
+  /** Overrides tracking.eventName for this item only. */
+  eventName?: string;
 }
 
 export interface IconPath {
@@ -59,8 +61,9 @@ export interface RenderOptions {
   icons?: Record<string, IconDefinition>;
 }
 
-export interface NormalizedPromotionItem extends Required<Omit<PromotionItem, "shortLabel">> {
+export interface NormalizedPromotionItem extends Required<Omit<PromotionItem, "shortLabel" | "eventName">> {
   shortLabel?: string;
+  eventName?: string;
   platform: string;
 }
 

@@ -4,10 +4,13 @@
   "type": "module",
   "scripts": {
     "build": "astro build",
-    "verify": "astro build && node verify.mjs"
+    "verify": "astro build && node verify.mjs",
+    "verify:astro5": "npm install --no-save astro@^5 && npm run verify",
+    "verify:astro6": "npm install --no-save astro@^6 && npm run verify",
+    "verify:astro7": "npm install --no-save astro@^7 && npm run verify"
   },
   "dependencies": {
     "@eigentime/one-widget": "file:../../..",
-    "astro": "7.2.2"
+    "astro": "^7"
   }
 }

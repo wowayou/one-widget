@@ -105,7 +105,7 @@ export function renderPromotionLinks(items, options = {}) {
       `one-widget__link--${item.emphasis}`
     ].join(" ");
 
-    return `<li class="one-widget__item"><a${attribute("class", linkClass)}${attribute("href", item.url)}${attribute("target", target)}${attribute("rel", rel)}${attribute("aria-label", item.appearance === "icon" ? item.label : undefined)}${attribute("title", item.appearance === "icon" ? item.label : undefined)}${attribute("data-one-item", item.id)}${attribute("data-kind", item.kind)}${attribute("data-platform", item.platform)}${attribute("data-source-project", tracking?.defaultSource)}>${item.icon === false ? "" : renderIcon(item.icon, iconRegistry)}<span class="${labelClass}">${escapeHtml(label)}</span></a></li>`;
+    return `<li class="one-widget__item"><a${attribute("class", linkClass)}${attribute("href", item.url)}${attribute("target", target)}${attribute("rel", rel)}${attribute("aria-label", item.appearance === "icon" ? item.label : undefined)}${attribute("title", item.appearance === "icon" ? item.label : undefined)}${attribute("data-one-item", item.id)}${attribute("data-kind", item.kind)}${attribute("data-platform", item.platform)}${attribute("data-event-name", tracking ? item.eventName : undefined)}${attribute("data-source-project", tracking?.defaultSource)}>${item.icon === false ? "" : renderIcon(item.icon, iconRegistry)}<span class="${labelClass}">${escapeHtml(label)}</span></a></li>`;
   }).join("");
 
   return `<nav${rootAttributes}><ul class="one-widget__list">${links}</ul></nav>`;

@@ -1,55 +1,13 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { enhancePromotionWidget } from "../src/index.js";
+import { MockAnchor, MockElement, makeEnvironment } from "./helpers/mock-dom.js";
 
-// CustomEvent became a global in newer Node releases; polyfill for older runtimes
-// so the mock DOM below can exercise the real dispatchEvent path.
-if (typeof globalThis.CustomEvent === "undefined") {
-  globalThis.CustomEvent = class CustomEvent {
-    constructor(type, options = {}) {
-      this.type = type;
-      this.detail = options.detail;
-      this.bubbles = options.bubbles ?? false;
-    }
-  };
-}
-
-// Minimal DOM stand-ins. enhancePromotionWidget only touches dataset,
-// querySelectorAll, add/dispatchEvent and instanceof checks, so we can model
-// just those without pulling in a full DOM implementation.
-class MockElement {
-  constructor({ dataset = {}, children = [] } = {}) {
-    this.dataset = { ...dataset };
-    this.children = children;
-    this.listeners = new Map();
-    this.dispatched = [];
-  }
-
-  querySelectorAll(selector) {
-    if (selector === "[data-one-item]") {
-      return this.children.filter((child) => child.dataset.oneItem !== undefined);
-    }
-    return [];
-  }
-
-  addEventListener(type, callback) {
-    if (!this.listeners.has(type)) this.listeners.set(type, []);
-    this.listeners.get(type).push(callback);
-  }
-
-  dispatchEvent(event) {
-    this.dispatched.push(event);
-    for (const callback of this.listeners.get(event.type) ?? []) callback(event);
-    return true;
-  }
-}
-
-class MockAnchor extends MockElement {}
-
-function buildWidget(datasetOverrides = {}) {
+function buildWidget(datasetOverrides = {}, anchors) {
   const anchor = new MockAnchor({
     dataset: { oneItem: "afdian", kind: "support", platform: "afdian" }
   });
+  const children = anchors ?? [anchor];
   const root = new MockElement({
     dataset: {
       sourceParam: "from",
@@ -59,19 +17,9 @@ function buildWidget(datasetOverrides = {}) {
       eventName: "support_click",
       ...datasetOverrides
     },
-    children: [anchor]
+    children
   });
-  return { root, anchor };
-}
-
-function makeEnvironment(search) {
-  const globalObject = {};
-  return {
-    Element: MockElement,
-    HTMLAnchorElement: MockAnchor,
-    location: { search },
-    globalObject
-  };
+  return { root, anchor: children[0] };
 }
 
 test("resolves an allowlisted ?from= source onto the link", () => {
@@ -106,6 +54,28 @@ test("dispatches one-widget:click and pushes to dataLayer with correct fields", 
       source_project: "one-stop-job"
     }
   ]);
+});
+
+test("a per-item event name overrides the group default", () => {
+  const support = new MockAnchor({
+    dataset: { oneItem: "afdian", kind: "support", platform: "afdian" }
+  });
+  const source = new MockAnchor({
+    dataset: { oneItem: "repo", kind: "repository", platform: "github", eventName: "source_click" }
+  });
+  const { root } = buildWidget({}, [support, source]);
+  const environment = makeEnvironment("?from=blog");
+  enhancePromotionWidget(root, environment);
+
+  support.dispatchEvent({ type: "click" });
+  source.dispatchEvent({ type: "click" });
+
+  // A repository link must not be reported as a support conversion just because
+  // it shares the widget with the support CTA.
+  assert.deepEqual(
+    environment.globalObject.dataLayer.map((entry) => [entry.event, entry.kind]),
+    [["support_click", "support"], ["source_click", "repository"]]
+  );
 });
 
 test("unknown source falls back to the unknown bucket", () => {

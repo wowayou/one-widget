@@ -17,6 +17,10 @@ const items = [
     platform: supportConfig.platform,
     url: supportConfig.url,
     label: ctaLabel,
+    // The page CTA copy already carries a ❤️, so the component icon is turned
+    // off to avoid two hearts in one button. Drop this line if the copy has no
+    // emoji and the drawn icon should be used instead.
+    icon: false,
     appearance: "button",
     emphasis: "primary",
     order: 10

@@ -63,7 +63,9 @@ export function enhancePromotionWidget(root, environment = {}) {
 
       const globalObject = environment.globalObject ?? window;
       globalObject.dataLayer = globalObject.dataLayer || [];
-      globalObject.dataLayer.push({ event: config.eventName, ...detail });
+      // A per-item data-event-name wins over the group default so a repository
+      // link in a support widget is not counted as a support conversion.
+      globalObject.dataLayer.push({ event: link.dataset.eventName || config.eventName, ...detail });
     });
   }
 }

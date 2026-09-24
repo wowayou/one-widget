@@ -124,9 +124,11 @@ export function inferPlatform(url, registry = createPlatformRegistry()) {
   // Pick the most specific match rather than the first one in iteration order.
   // An exact host beats a suffix match, and a longer host beats a shorter one,
   // so a custom "gist.github.com" platform wins over the built-in "github.com".
+  // Ties go to the last registered platform, so a custom definition can claim a
+  // host that a built-in already covers.
   let best;
   const consider = (key, score) => {
-    if (!best || score > best.score) best = { key, score };
+    if (!best || score >= best.score) best = { key, score };
   };
 
   for (const [key, definition] of registry) {
