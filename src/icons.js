@@ -76,7 +76,12 @@ export function createIconRegistry(customIcons = {}) {
   // Custom keys are lowercased to stay consistent with registerIcon() and the
   // lowercased item.icon lookup in model.js; otherwise a key like "Forge"
   // would never match and silently fall back to the default link icon.
-  for (const [key, definition] of Object.entries(customIcons)) {
+  if (customIcons !== null && customIcons !== undefined
+    && (typeof customIcons !== "object" || Array.isArray(customIcons))) {
+    throw new TypeError("icons must be an object keyed by icon name.");
+  }
+  const customEntries = customIcons instanceof Map ? [...customIcons] : Object.entries(customIcons ?? {});
+  for (const [key, definition] of customEntries) {
     const normalizedKey = String(key).trim().toLowerCase();
     if (!normalizedKey) throw new TypeError("Icon key cannot be empty.");
     registry.set(normalizedKey, normalizeIconDefinition(normalizedKey, definition));
@@ -84,10 +89,15 @@ export function createIconRegistry(customIcons = {}) {
   return registry;
 }
 
-export function registerIcon(registry, key, definition) {
+export function assertIconRegistry(registry) {
   if (!(registry instanceof Map)) {
     throw new TypeError("Icon registry must be a Map created by createIconRegistry().");
   }
+  return registry;
+}
+
+export function registerIcon(registry, key, definition) {
+  assertIconRegistry(registry);
   const normalizedKey = String(key).trim().toLowerCase();
   if (!normalizedKey) throw new TypeError("Icon key cannot be empty.");
 

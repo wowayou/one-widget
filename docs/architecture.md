@@ -54,13 +54,20 @@ tracking.js：可选的来源归因与事件增强
 配置错误在构建期抛出异常，而不是悄悄隐藏：
 
 - ID 重复或格式不合法；
-- URL 不是绝对地址、协议不安全或含内嵌凭据；
+- URL 不是绝对地址、协议不安全、含内嵌凭据，或 `mailto:` 没有收件人；
 - `kind`、`appearance`、`emphasis`、layout、theme 不属于支持值；
 - 布尔字段或数值字段类型错误；
 - `eventName` 为空串或纯空白；
-- 自定义图标缺少 `viewBox` 或 path。
+- 自定义图标缺少 `viewBox` 或 path；
+- `platforms` / `icons` 不是对象或 `Map`，`registry` / `iconRegistry` 不是 `Map`。
+
+`null` 可选字段视为未设置，因为这是 JSON / CMS 表达“没填”的常见方式，而不是配置错误。
 
 只有两类情况使用可预期的 fallback：未知平台使用 `custom` 语义；找不到图标 key 时使用中性的 link 图标。前者保证新平台无需升级包，后者保证图标配置错误不会让链接本身消失。
+
+新增校验只针对此前就会静默出错的输入，已能正常渲染的配置升级后不会开始报错，这是“升级不需要重新配置”的一部分。
+
+客户端增强相反，永远不抛错：缺少 DOM 全局对象时直接跳过，`one-widget:click` 派发与 `dataLayer` 推送各自 `try/catch`，单个 widget 失败不影响同页其它 widget。它丢失的只是归因，不能影响链接本身。
 
 ## 安全边界
 

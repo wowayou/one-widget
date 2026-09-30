@@ -1,4 +1,4 @@
-import { createPlatformRegistry, inferPlatform } from "./registry.js";
+import { assertPlatformRegistry, createPlatformRegistry, inferPlatform } from "./registry.js";
 
 export const PROMOTION_KINDS = Object.freeze([
   "social",
@@ -36,6 +36,11 @@ export function normalizeUrl(value, path = "url") {
   if ((parsed.protocol === "http:" || parsed.protocol === "https:") && !parsed.hostname) {
     throw new TypeError(`${path} must include a hostname.`);
   }
+  // "mailto:" or "mailto:?subject=hi" parses fine but opens an empty draft
+  // with no recipient, which is never what a promotion link intends.
+  if (parsed.protocol === "mailto:" && !parsed.pathname.trim()) {
+    throw new TypeError(`${path} must include an email address.`);
+  }
   if (parsed.username || parsed.password) {
     throw new TypeError(`${path} must not contain embedded credentials.`);
   }
@@ -62,11 +67,14 @@ function defaultIcon(kind) {
   return "link";
 }
 
-export function normalizePromotionItems(items, options = {}) {
+export function normalizePromotionItems(items, options) {
   if (!Array.isArray(items)) throw new TypeError("items must be an array.");
+  options ??= {};
 
-  const registry = options.registry ?? createPlatformRegistry(options.platforms);
-  if (options.openInNewTab !== undefined && typeof options.openInNewTab !== "boolean") {
+  const registry = options.registry
+    ? assertPlatformRegistry(options.registry)
+    : createPlatformRegistry(options.platforms);
+  if (options.openInNewTab != null && typeof options.openInNewTab !== "boolean") {
     throw new TypeError("options.openInNewTab must be a boolean.");
   }
   const defaultOpenInNewTab = options.openInNewTab ?? true;
@@ -104,18 +112,20 @@ export function normalizePromotionItems(items, options = {}) {
       throw new TypeError(`${path}.emphasis must be primary, secondary, or quiet.`);
     }
 
+    // null is what JSON / CMS exports emit for "not set", so treat it like
+    // undefined for every optional field instead of failing on it.
     const order = item.order ?? index;
     if (!Number.isFinite(order)) throw new TypeError(`${path}.order must be a finite number.`);
-    if (item.enabled !== undefined && typeof item.enabled !== "boolean") {
+    if (item.enabled != null && typeof item.enabled !== "boolean") {
       throw new TypeError(`${path}.enabled must be a boolean.`);
     }
-    if (item.openInNewTab !== undefined && typeof item.openInNewTab !== "boolean") {
+    if (item.openInNewTab != null && typeof item.openInNewTab !== "boolean") {
       throw new TypeError(`${path}.openInNewTab must be a boolean.`);
     }
-    if (item.icon !== undefined && item.icon !== false && (typeof item.icon !== "string" || !item.icon.trim())) {
+    if (item.icon != null && item.icon !== false && (typeof item.icon !== "string" || !item.icon.trim())) {
       throw new TypeError(`${path}.icon must be a non-empty string or false.`);
     }
-    if (item.eventName !== undefined && (typeof item.eventName !== "string" || !item.eventName.trim())) {
+    if (item.eventName != null && (typeof item.eventName !== "string" || !item.eventName.trim())) {
       throw new TypeError(`${path}.eventName must be a non-empty string.`);
     }
 

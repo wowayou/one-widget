@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { enhancePromotionWidget } from "../src/index.js";
+import { enhancePromotionWidget, enhancePromotionWidgets, resolveTrackingSource } from "../src/index.js";
 import { MockAnchor, MockElement, makeEnvironment } from "./helpers/mock-dom.js";
 
 function buildWidget(datasetOverrides = {}, anchors) {
@@ -106,4 +106,70 @@ test("is a no-op when no tracking config is present", () => {
 
   assert.doesNotThrow(() => enhancePromotionWidget(root, makeEnvironment("?from=blog")));
   assert.equal(anchor.dataset.sourceProject, undefined);
+});
+
+test("matches sources case-insensitively and reports the configured spelling", () => {
+  const config = { allowedSources: ["one-stop-job", "GitHub"], defaultSource: "direct", unknownSource: "other" };
+
+  assert.equal(resolveTrackingSource("?from=One-Stop-Job", config), "one-stop-job");
+  assert.equal(resolveTrackingSource("?from=github%20", config), "GitHub");
+  assert.equal(resolveTrackingSource("?from=%20%20", config), "direct");
+  assert.equal(resolveTrackingSource("?from=DIRECT", config), "direct");
+  assert.equal(resolveTrackingSource(undefined, null), "direct");
+});
+
+test("reports middle-click opens but not right clicks", () => {
+  const { root, anchor } = buildWidget();
+  const environment = makeEnvironment("?from=blog");
+  enhancePromotionWidget(root, environment);
+
+  anchor.dispatchEvent({ type: "auxclick", button: 1 });
+  anchor.dispatchEvent({ type: "auxclick", button: 2 });
+  anchor.dispatchEvent({ type: "click", button: 1 });
+
+  assert.equal(environment.globalObject.dataLayer.length, 1, "only the middle click is reported, once");
+});
+
+test("a foreign dataLayer or a throwing listener never breaks the click", () => {
+  const { root, anchor } = buildWidget();
+  const environment = makeEnvironment("?from=blog");
+  environment.globalObject.dataLayer = { not: "an array" };
+  root.addEventListener("one-widget:click", () => {
+    throw new Error("listener failure");
+  });
+  enhancePromotionWidget(root, environment);
+
+  assert.doesNotThrow(() => anchor.dispatchEvent({ type: "click" }));
+  assert.equal(root.dispatched.filter((event) => event.type === "one-widget:click").length, 1);
+
+  const second = buildWidget();
+  const secondEnvironment = makeEnvironment("?from=blog");
+  second.root.addEventListener("one-widget:click", () => {
+    throw new Error("listener failure");
+  });
+  enhancePromotionWidget(second.root, secondEnvironment);
+  second.anchor.dispatchEvent({ type: "click" });
+  assert.equal(secondEnvironment.globalObject.dataLayer.length, 1, "dataLayer still receives the event");
+});
+
+test("does not touch browser globals when run outside a browser", () => {
+  assert.doesNotThrow(() => enhancePromotionWidgets());
+  assert.doesNotThrow(() => enhancePromotionWidgets(null));
+
+  const { root, anchor } = buildWidget();
+  assert.doesNotThrow(() => enhancePromotionWidget(root, { Element: MockElement, HTMLAnchorElement: MockAnchor }));
+  assert.equal(anchor.dataset.sourceProject, "direct", "no location means no ?from= to read");
+  assert.doesNotThrow(() => anchor.dispatchEvent({ type: "click" }));
+});
+
+test("accepts element nodes from another realm by node type", () => {
+  const anchor = { nodeType: 1, localName: "a", dataset: { oneItem: "afdian", kind: "support", platform: "afdian" }, addEventListener() {} };
+  const root = {
+    nodeType: 1,
+    dataset: { eventName: "support_click", sourceAllowlist: "[\"blog\", 42]" },
+    querySelectorAll: () => [anchor]
+  };
+
+  enhancePromotionWidget(root, { location: { search: "?from=blog" }, globalObject: {} });
+  assert.equal(anchor.dataset.sourceProject, "blog");
 });

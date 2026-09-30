@@ -57,8 +57,16 @@ export interface RenderOptions {
   tracking?: TrackingOptions;
   registry?: Map<string, Required<PlatformDefinition>>;
   iconRegistry?: Map<string, IconDefinition>;
-  platforms?: Record<string, PlatformDefinition>;
-  icons?: Record<string, IconDefinition>;
+  platforms?: Record<string, PlatformDefinition> | Map<string, PlatformDefinition>;
+  icons?: Record<string, IconDefinition> | Map<string, IconDefinition>;
+}
+
+export interface TrackingEnvironment {
+  location?: Pick<Location, "search">;
+  globalObject?: (Window & { dataLayer?: Array<Record<string, unknown>> }) | { dataLayer?: Array<Record<string, unknown>> };
+  Element?: typeof Element;
+  HTMLAnchorElement?: typeof HTMLAnchorElement;
+  CustomEvent?: typeof CustomEvent;
 }
 
 export interface NormalizedPromotionItem extends Required<Omit<PromotionItem, "shortLabel" | "eventName">> {
@@ -71,15 +79,16 @@ export const PROMOTION_KINDS: readonly PromotionKind[];
 export const BUILTIN_PLATFORMS: readonly string[];
 export const BUILTIN_ICONS: readonly string[];
 
-export function createPlatformRegistry(customPlatforms?: Record<string, PlatformDefinition>): Map<string, Required<PlatformDefinition>>;
+export function createPlatformRegistry(customPlatforms?: Record<string, PlatformDefinition> | Map<string, PlatformDefinition> | null): Map<string, Required<PlatformDefinition>>;
 export function registerPlatform(registry: Map<string, Required<PlatformDefinition>>, key: string, definition: PlatformDefinition): Map<string, Required<PlatformDefinition>>;
 export function inferPlatform(url: string | URL, registry?: Map<string, Required<PlatformDefinition>>): string | undefined;
-export function createIconRegistry(customIcons?: Record<string, IconDefinition>): Map<string, IconDefinition>;
+export function createIconRegistry(customIcons?: Record<string, IconDefinition> | Map<string, IconDefinition> | null): Map<string, IconDefinition>;
 export function registerIcon(registry: Map<string, IconDefinition>, key: string, definition: IconDefinition): Map<string, IconDefinition>;
 export function normalizeUrl(value: string, path?: string): string;
-export function normalizePromotionItems(items: PromotionItem[], options?: RenderOptions): NormalizedPromotionItem[];
-export function renderableItems(items: PromotionItem[], options?: RenderOptions): NormalizedPromotionItem[];
-export function renderPromotionLinks(items: PromotionItem[], options?: RenderOptions): string;
-export function resolveTrackingSource(search: string, config?: TrackingOptions): string;
-export function enhancePromotionWidget(root: Element, environment?: Record<string, unknown>): void;
-export function enhancePromotionWidgets(scope?: ParentNode): void;
+export function normalizePromotionItems(items: readonly PromotionItem[], options?: RenderOptions | null): NormalizedPromotionItem[];
+export function renderableItems(items: readonly PromotionItem[], options?: RenderOptions | null): NormalizedPromotionItem[];
+/** Returns an empty string when no item is enabled, so no empty landmark is emitted. */
+export function renderPromotionLinks(items: readonly PromotionItem[], options?: RenderOptions | null): string;
+export function resolveTrackingSource(search: string | null | undefined, config?: TrackingOptions | null): string;
+export function enhancePromotionWidget(root: Element, environment?: TrackingEnvironment | null): void;
+export function enhancePromotionWidgets(scope?: ParentNode | null): void;
