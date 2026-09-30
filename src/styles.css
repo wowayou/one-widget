@@ -50,11 +50,23 @@
   flex-wrap: nowrap;
   overflow-x: auto;
   scrollbar-width: thin;
+  /* overflow-x: auto also clips vertically, cutting off the 2px + 3px focus
+     ring; pad it back in and cancel the padding with a negative margin so the
+     layout is unchanged. Block axis only: an inline-axis negative margin
+     would add horizontal page scroll on a full-bleed narrow viewport. */
+  margin-block: -5px;
+  padding-block: 5px;
 }
 
 .one-widget__item {
+  min-width: 0;
+  max-width: 100%;
   margin: 0;
   padding: 0;
+}
+
+.one-widget[data-layout="inline"] .one-widget__item {
+  flex: 0 0 auto;
 }
 
 .one-widget[data-layout="stack"] .one-widget__item {
@@ -76,7 +88,12 @@
   font-family: var(--one-font-ui);
   font-size: 0.875rem;
   line-height: 1.25;
+  text-align: center;
   text-decoration: none;
+  /* Long unbroken labels (URLs, CJK without spaces) must wrap instead of
+     pushing the page wider than a 390px viewport. */
+  max-width: 100%;
+  overflow-wrap: anywhere;
   transition: border-color 120ms ease, background-color 120ms ease, color 120ms ease;
 }
 
@@ -87,6 +104,17 @@
 .one-widget__link:hover {
   border-color: var(--one-accent);
   color: var(--one-accent);
+}
+
+.one-widget__link:focus {
+  outline: 2px solid var(--one-accent);
+  outline-offset: 3px;
+}
+
+/* Browsers with :focus-visible keep the ring for keyboard users only; older
+   ones fall back to the :focus rule above so focus is never invisible. */
+.one-widget__link:focus:not(:focus-visible) {
+  outline: none;
 }
 
 .one-widget__link:focus-visible {
@@ -114,6 +142,7 @@
 
 .one-widget__link--icon {
   width: 44px;
+  min-width: 44px;
   padding: 0;
 }
 
@@ -132,6 +161,7 @@
   margin: -1px;
   overflow: hidden;
   clip: rect(0, 0, 0, 0);
+  clip-path: inset(50%);
   white-space: nowrap;
   border: 0;
 }
@@ -143,6 +173,22 @@
 
   .one-widget[data-layout="wrap"] .one-widget__link--button {
     width: 100%;
+  }
+}
+
+/* Windows High Contrast / forced colours drop backgrounds, so the primary
+   button would lose its only affordance; keep a system-coloured border and
+   let the icon follow the link text colour. */
+@media (forced-colors: active) {
+  .one-widget__link,
+  .one-widget__link--primary,
+  .one-widget__link--quiet {
+    border-color: LinkText;
+    color: LinkText;
+  }
+
+  .one-widget__link:focus-visible {
+    outline-color: Highlight;
   }
 }
 

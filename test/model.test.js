@@ -108,3 +108,79 @@ test("matches custom icon keys regardless of case", () => {
   ]);
   assert.equal(item.icon, "forge", "item.icon should resolve to the lowercased key");
 });
+
+test("treats null optional fields from JSON / CMS exports as unset", () => {
+  const [item] = normalizePromotionItems([
+    {
+      id: "cms",
+      url: "https://afdian.com/a/eigentime",
+      label: "Support",
+      kind: null,
+      platform: null,
+      shortLabel: null,
+      icon: null,
+      enabled: null,
+      order: null,
+      openInNewTab: null,
+      appearance: null,
+      emphasis: null,
+      eventName: null
+    }
+  ], null);
+
+  assert.equal(item.platform, "afdian");
+  assert.equal(item.kind, "support");
+  assert.equal(item.enabled, true);
+  assert.equal(item.openInNewTab, true);
+  assert.equal(item.eventName, undefined);
+});
+
+test("rejects a mailto URL without a recipient", () => {
+  assert.throws(() => normalizeUrl("mailto:"), /email address/);
+  assert.throws(() => normalizeUrl("mailto:?subject=hi"), /email address/);
+  assert.equal(normalizeUrl("mailto:hi@example.com"), "mailto:hi@example.com");
+});
+
+test("normalises declared platform hosts the way URL#hostname does", () => {
+  const registry = createPlatformRegistry({
+    pasted: { hosts: ["https://Code.Example.org/"] },
+    scoped: { hosts: ["gitlab.com/someone"] },
+    dotted: { hosts: ["docs.example.net."] },
+    idn: { hosts: ["例子.com"] },
+    bare: { protocols: ["MAILTO"] }
+  });
+
+  assert.equal(inferPlatform("https://code.example.org/team/repo", registry), "pasted");
+  assert.equal(inferPlatform("https://docs.example.net/", registry), "dotted");
+  assert.equal(inferPlatform("https://docs.example.net./", registry), "dotted", "FQDN with trailing dot");
+  assert.equal(inferPlatform("https://例子.com/a", registry), "idn");
+  assert.equal(inferPlatform("https://github.com./user", registry), "github");
+  assert.equal(inferPlatform("https://gitlab.com/other", registry), "gitlab", "a host with a path must not widen to the whole host");
+  assert.equal(inferPlatform("mailto:hi@example.com", registry), "bare");
+});
+
+test("a custom platform key overrides the built-in regardless of case", () => {
+  const registry = createPlatformRegistry({
+    GitHub: { defaultKind: "social", hosts: ["github.com"] }
+  });
+
+  assert.equal([...registry.keys()].filter((key) => key === "github").length, 1);
+  assert.equal(registry.get("github").defaultKind, "social");
+  assert.equal(inferPlatform("https://github.com/user", registry), "github");
+});
+
+test("accepts platform and icon definitions as a Map", () => {
+  const platforms = new Map([["forgejo", { defaultKind: "repository", icon: "forge", hosts: ["code.example.org"] }]]);
+  const icons = new Map([["forge", { viewBox: "0 0 24 24", paths: [{ d: "M4 4h16v16H4z" }] }]]);
+
+  assert.equal(inferPlatform("https://code.example.org/x", createPlatformRegistry(platforms)), "forgejo");
+  assert.ok(createIconRegistry(icons).has("forge"));
+});
+
+test("rejects registries and definition maps of the wrong shape with a clear error", () => {
+  const items = [{ id: "a", url: "https://example.com", label: "A" }];
+
+  assert.throws(() => normalizePromotionItems(items, { registry: {} }), /createPlatformRegistry/);
+  assert.throws(() => createPlatformRegistry([{ hosts: ["example.com"] }]), /platforms must be an object/);
+  assert.throws(() => createIconRegistry([{ viewBox: "0 0 24 24", paths: [{ d: "M0 0" }] }]), /icons must be an object/);
+});

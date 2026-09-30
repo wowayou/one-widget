@@ -1,21 +1,32 @@
 {
   "name": "@eigentime/one-widget",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Static-first, accessible promotion and sponsorship links for Eigentime and other sites.",
   "type": "module",
+  "main": "./src/index.js",
+  "types": "./src/index.d.ts",
+  "typesVersions": {
+    "*": {
+      "tracking": [
+        "./src/tracking.d.ts"
+      ]
+    }
+  },
   "sideEffects": [
     "./src/styles.css"
   ],
   "exports": {
     ".": {
       "types": "./src/index.d.ts",
-      "import": "./src/index.js"
+      "import": "./src/index.js",
+      "default": "./src/index.js"
     },
     "./astro": "./src/astro/PromotionLinks.astro",
     "./styles.css": "./src/styles.css",
     "./tracking": {
       "types": "./src/tracking.d.ts",
-      "import": "./src/tracking.js"
+      "import": "./src/tracking.js",
+      "default": "./src/tracking.js"
     },
     "./package.json": "./package.json"
   },

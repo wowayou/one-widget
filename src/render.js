@@ -1,14 +1,19 @@
-import { createIconRegistry } from "./icons.js";
-import { createPlatformRegistry } from "./registry.js";
+import { assertIconRegistry, createIconRegistry } from "./icons.js";
+import { assertPlatformRegistry, createPlatformRegistry } from "./registry.js";
 import { renderableItems } from "./model.js";
 
+const HTML_ESCAPES = {
+  "&": "&amp;",
+  "<": "&lt;",
+  ">": "&gt;",
+  '"': "&quot;",
+  "'": "&#39;"
+};
+
+// A single regex pass instead of String#replaceAll keeps the renderer usable
+// from older bundler targets that future adapters may ship to the browser.
 function escapeHtml(value) {
-  return String(value)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#39;");
+  return String(value).replace(/[&<>"']/g, (character) => HTML_ESCAPES[character]);
 }
 
 function attribute(name, value) {
@@ -32,15 +37,19 @@ function normalizeTracking(tracking) {
     throw new TypeError("tracking must be an object.");
   }
 
+  const fields = {};
   for (const field of ["sourceParam", "defaultSource", "unknownSource", "eventName"]) {
     const value = tracking[field];
-    if (value !== undefined && (typeof value !== "string" || !value.trim())) {
+    if (value != null && (typeof value !== "string" || !value.trim())) {
       throw new TypeError(`tracking.${field} must be a non-empty string.`);
     }
+    // Trim so a stray space in a config file cannot create a second, invisible
+    // analytics bucket such as "direct " next to "direct".
+    fields[field] = value?.trim();
   }
 
   let allowedSources = [];
-  if (tracking.allowedSources !== undefined) {
+  if (tracking.allowedSources != null) {
     if (!Array.isArray(tracking.allowedSources)) {
       throw new TypeError("tracking.allowedSources must be an array of strings.");
     }
@@ -48,22 +57,27 @@ function normalizeTracking(tracking) {
       if (typeof source !== "string" || !source.trim()) {
         throw new TypeError(`tracking.allowedSources[${index}] must be a non-empty string.`);
       }
-      return source;
+      return source.trim();
     });
   }
 
   return {
-    sourceParam: tracking.sourceParam ?? "from",
-    allowedSources,
-    defaultSource: tracking.defaultSource ?? "direct",
-    unknownSource: tracking.unknownSource ?? "other",
-    eventName: tracking.eventName ?? "promotion_click"
+    sourceParam: fields.sourceParam ?? "from",
+    allowedSources: [...new Set(allowedSources)],
+    defaultSource: fields.defaultSource ?? "direct",
+    unknownSource: fields.unknownSource ?? "other",
+    eventName: fields.eventName ?? "promotion_click"
   };
 }
 
-export function renderPromotionLinks(items, options = {}) {
-  const platformRegistry = options.registry ?? createPlatformRegistry(options.platforms);
-  const iconRegistry = options.iconRegistry ?? createIconRegistry(options.icons);
+export function renderPromotionLinks(items, options) {
+  options ??= {};
+  const platformRegistry = options.registry
+    ? assertPlatformRegistry(options.registry)
+    : createPlatformRegistry(options.platforms);
+  const iconRegistry = options.iconRegistry
+    ? assertIconRegistry(options.iconRegistry)
+    : createIconRegistry(options.icons);
   const visibleItems = renderableItems(items, {
     registry: platformRegistry,
     openInNewTab: options.openInNewTab
@@ -71,7 +85,9 @@ export function renderPromotionLinks(items, options = {}) {
   const tracking = normalizeTracking(options.tracking);
   const layout = options.layout ?? "wrap";
   const theme = options.theme ?? "inherit";
-  const ariaLabel = options.ariaLabel ?? "Project links";
+  // An empty aria-label leaves the <nav> landmark unnamed, which is worse than
+  // the generic default, so blank values fall back to it.
+  const ariaLabel = String(options.ariaLabel ?? "").trim() || "Project links";
 
   if (!["wrap", "stack", "inline"].includes(layout)) {
     throw new TypeError("layout must be wrap, stack, or inline.");
@@ -80,8 +96,12 @@ export function renderPromotionLinks(items, options = {}) {
     throw new TypeError("theme must be inherit, light, or dark.");
   }
 
+  // Every item disabled (e.g. a platform temporarily taken offline) must not
+  // leave an empty, labelled navigation landmark in the page.
+  if (visibleItems.length === 0) return "";
+
   const rootAttributes = [
-    attribute("class", `one-widget${options.className ? ` ${options.className}` : ""}`),
+    attribute("class", ["one-widget", options.className ? String(options.className).trim() : ""].filter(Boolean).join(" ")),
     attribute("aria-label", ariaLabel),
     attribute("data-one-widget", true),
     attribute("data-layout", layout),

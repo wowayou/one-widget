@@ -74,7 +74,9 @@ const items = [
 2. 点击时派发 `one-widget:click` DOM 事件；
 3. 若页面使用 GTM，则向 `window.dataLayer` 推送同名分析事件。
 
-未知来源统一归入 `other`，没有参数时归入 `direct`。查询参数不会被拼到付款链接上。
+未知来源统一归入 `other`，没有参数时归入 `direct`。来源值会去掉首尾空白并忽略大小写匹配（`?from=GitHub` 记为配置里的 `github`），中键“在新标签页打开”也会上报。查询参数不会被拼到付款链接上。
+
+增强脚本是尽力而为的：没有 `window`/`document` 时不做任何事；页面监听器抛错或 `dataLayer` 被定义成非数组时，另一条上报和链接跳转都不受影响。
 
 Eigentime 现有 `/zh/support/` 与 `/en/support/` 的具体替换方式见 [docs/eigentime-integration.md](docs/eigentime-integration.md)。
 
@@ -120,7 +122,8 @@ interface PromotionItem {
 
 - 未显式设置 `order` 的条目会以它在数组中的下标作为 `order`,再与其它条目一起排序。因此只给部分条目写 `order` 时,未写的那条可能穿插到中间(例如 `order: 1`、下标 2、`order: 5` 会排成 `1, 2, 5`)。要精确控制顺序,建议要么全写、要么全不写。
 - 相同 `order` 时,数组顺序作为稳定后备顺序。
-- `enabled: false` 会保留配置但不渲染，适合临时下线某个平台。
+- `enabled: false` 会保留配置但不渲染，适合临时下线某个平台。全部条目都被禁用时整个组件输出空字符串，不会留下空的 `<nav>`。
+- 来自 CMS / JSON 的 `null` 可选字段等同于未填写。
 - 未填 `platform` 时会根据 URL 推断；显式值始终优先。
 - 未填 `kind`、`icon`、`appearance`、`emphasis` 时，才从平台注册与业务语义推导默认值。
 - `appearance: "icon"` 仍保留 `aria-label` 和屏幕阅读器文本，可点击区域固定不小于 44×44px。
@@ -197,6 +200,6 @@ npm run verify:astro6
 npm run verify:astro7
 ```
 
-最近一次多版本验证：Astro 5.18.2、6.4.8、7.3.4，三个大版本均构建并断言通过。
+最近一次多版本验证：Astro 5.18.2、6.4.8、7.3.5，三个大版本均构建并断言通过。GitHub Actions 会在每次推送时于 Node 20 / 22 / 24 上跑 `npm run check`，并用 Astro 5 / 6 / 7 构建 fixture。
 
 架构与稳定 API 边界见 [docs/architecture.md](docs/architecture.md)。

@@ -135,3 +135,40 @@ test("rejects malformed tracking configuration instead of silently degrading", (
     /eventName must be a non-empty string/
   );
 });
+
+test("renders nothing when no item is enabled instead of an empty landmark", () => {
+  const html = renderPromotionLinks([
+    { id: "a", url: "https://afdian.com/a/x", label: "Support", enabled: false }
+  ], { ariaLabel: "Support links", tracking: { eventName: "support_click" } });
+
+  assert.equal(html, "");
+  assert.equal(renderPromotionLinks([]), "");
+  // Configuration errors still surface even when nothing would be shown.
+  assert.throws(() => renderPromotionLinks([], { layout: "grid" }), /layout must be/);
+});
+
+test("falls back to the default landmark name for a blank ariaLabel", () => {
+  const items = [{ id: "a", url: "https://example.com", label: "A" }];
+
+  assert.match(renderPromotionLinks(items, { ariaLabel: "   " }), /<nav[^>]*aria-label="Project links"/);
+  assert.match(renderPromotionLinks(items, null), /<nav[^>]*aria-label="Project links"/);
+  assert.match(renderPromotionLinks(items, { className: "  extra  " }), /<nav class="one-widget extra"/);
+});
+
+test("trims tracking values and de-duplicates the source allowlist", () => {
+  const html = renderPromotionLinks([{ id: "a", url: "https://afdian.com/a/x", label: "Support" }], {
+    tracking: {
+      sourceParam: " from ",
+      allowedSources: ["blog", " blog ", "github"],
+      defaultSource: "direct ",
+      unknownSource: null,
+      eventName: " support_click"
+    }
+  });
+
+  assert.match(html, /data-source-param="from"/);
+  assert.match(html, /data-source-allowlist="\[&quot;blog&quot;,&quot;github&quot;\]"/);
+  assert.match(html, /data-source-default="direct"/);
+  assert.match(html, /data-source-unknown="other"/);
+  assert.match(html, /<nav[^>]*data-event-name="support_click"/);
+});

@@ -1,12 +1,7 @@
-import type { TrackingOptions } from "./index.js";
+import type { TrackingEnvironment, TrackingOptions } from "./index.js";
 
-export interface TrackingEnvironment {
-  location?: Location;
-  globalObject?: Window & { dataLayer?: Array<Record<string, unknown>> };
-  Element?: typeof Element;
-  HTMLAnchorElement?: typeof HTMLAnchorElement;
-}
+export type { TrackingEnvironment };
 
-export function resolveTrackingSource(search: string, config?: TrackingOptions): string;
-export function enhancePromotionWidget(root: Element, environment?: TrackingEnvironment): void;
-export function enhancePromotionWidgets(scope?: ParentNode): void;
+export function resolveTrackingSource(search: string | null | undefined, config?: TrackingOptions | null): string;
+export function enhancePromotionWidget(root: Element, environment?: TrackingEnvironment | null): void;
+export function enhancePromotionWidgets(scope?: ParentNode | null): void;
